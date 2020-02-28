@@ -13,3 +13,10 @@
 /mord_hmdb_df.pickle
 /mord_norm_hmdb_df.pickle
 /profile_output.txt
+/all_public/
+/hist_plots/
+/int_plots/
+/model_plots/
+/n_obs_plots/
+/nl_reports/
+/retired/

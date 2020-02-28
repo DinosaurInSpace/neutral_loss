@@ -201,7 +201,8 @@ def water_cleanup(x_df):
                        'colocalization_H2O', 'loss_intensity_share_H2O',
                        'n_loss_only_H2O', 'n_loss_wparent_H2O',
                        'msm', 'msm_H2O', 'off_sample', 'off_sample_H2O',
-                       'intensity_avg', 'intensity_avg_H2O']
+                       'intensity_avg', 'intensity_avg_H2O',
+                       'ion', 'ion_H2O', 'ion_formula', 'ion_formula_H2O']
 
     x_df = x_df[desired_columns].copy(deep=True)
 
@@ -211,7 +212,8 @@ def water_cleanup(x_df):
                     'msm': np.float32, 'msm_H2O': np.float32,
                     'intensity_avg': np.float32,
                     'intensity_avg_H2O': np.float32,
-                    'off_sample': np.float32, 'off_sample_H2O': np.float32}
+                    'off_sample': np.float32, 'off_sample_H2O': np.float32,
+                    'ion': str, 'ion_H2O': str, 'ion_formula': str, 'ion_formula_H2O': str}
 
     x_df = x_df.astype(convert_dict).copy(deep=True)
 
