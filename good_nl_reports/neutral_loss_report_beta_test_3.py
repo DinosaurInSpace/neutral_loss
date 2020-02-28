@@ -46,8 +46,8 @@ MAX_FDR = 0.5
 # while they are reprocessing. Progress can be monitored on the METASPACE website.
 
 # I think these two are redundant?
-reprocess = True
-reprocess_not_downloading = True
+reprocess = False  # True
+reprocess_not_downloading = False  # True
 
 if reprocess == True:
     sm = SMInstance(host=METASPACE_HOST)
