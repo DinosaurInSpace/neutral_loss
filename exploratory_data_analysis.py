@@ -23,10 +23,6 @@ Next script in series is:
 import pandas as pd
 import numpy as np
 import itertools
-import functools
-import importlib
-import os
-import time
 import argparse
 
 from sklearn.decomposition import PCA
@@ -46,21 +42,25 @@ __email__ = "chrisrath@gmail.com"
 __status__ = "Development"
 
 # to do:
-# Debug
 # All chemical space versus identified chemical space
-# Chemical space vs chemical space
-# Filtering via FDR and coloc
+# Chemical space vs chemical space (Mapping mordred onto morgan)
 # Other plots of chemical space, Tanimoto similiarity?
-# Mapping mordred onto morgan?
 # https://scanpy.readthedocs.io/en/stable/api/scanpy.plotting.html
 # Link mord, morg, mm and show tooltip on all three!
+# Visualize catagories
 # Visualize nuetral loss data
+# Heatmap observed via different methods
+# Pass arbitrary column to color: 4x, dsid, group
+# Kind of a mess?  Carry one db_fd and data_df through everything.
+# Write specific questions down.  Explore one-time versus many.
+# Make less of an iterdependent workflow, and more little functions.
+# E.g. call PCA and UMAP once for distances, then leave on df.
 
 
 def db_mm_parser(dfs, mord_bool, morg_bool):
     db_df = dfs[0]
-    morg = dfs[1]
-    mord = dfs[2]
+    mord = dfs[1]
+    morg = dfs[2]
 
     if mord_bool is True and morg_bool is False:
         m_df = mord.iloc[:,:-2].copy(deep=True)
@@ -75,7 +75,7 @@ def db_mm_parser(dfs, mord_bool, morg_bool):
     elif mord_bool is True and morg_bool is True:
         n_df = pd.DataFrame(list(morg.bits)).copy(deep=True).reset_index()
         m_df = mord.iloc[:, :-2].copy(deep=True).reset_index()
-        m_df = pd.concat([mord, morg], axis=1).astype(float)
+        m_df = pd.concat([m_df, n_df], axis=1).astype(float)
         return {'data': m_df, 'ids': db_df.hmdb_ids.reset_index(),
                 'Molecule': db_df.Molecule.reset_index(),
                 'data_type': 'feat_fp'}
@@ -90,7 +90,7 @@ def dataset_parser(data_df, data_sort):
     # Can look at all data, 4x catagories, group, experiment or
     # Custom for filtering by passing 'ColName'=='value'?
 
-    data_df['4x'] = data_df['analyzer'] + data_df['polarity']
+    data_df['fourX'] = data_df['analyzer'] + data_df['polarity']
     data_df['color'] = None
     column_agg_method_dict = {'has_no_loss': 'describe',
                               'has_H2O': 'describe',
@@ -107,15 +107,17 @@ def dataset_parser(data_df, data_sort):
                               'loss_intensity_share_H2O': 'describe',
                               'FDR10-v4': 'describe'}
 
-    column_join_list = ['formula', 'adduct', 'ds_id', 'hmdb_ids', 'ion',
+    column_join_list = ['hmdb_ids']  # in unstack hmdbs fxn
+
+    column_not_used = ['adduct', 'ds_id', 'ion', 'formula'
                         'ion_H2O', 'ion_formula', 'ion_formula_H2O', 'group',
-                        'analyzer', 'polarity', '4x']
+                        'analyzer', 'polarity', 'fourX']
 
     if data_sort is 'all':
         return data_df
 
     elif data_sort is '4x':
-        gb_label = '4x'
+        gb_label = 'fourX'
 
     elif data_sort is 'group':
         gb_label = 'group'
@@ -126,15 +128,37 @@ def dataset_parser(data_df, data_sort):
     else:
         # Custom?
         data_df = data_df[data_df[data_sort]].copy(deep=True)
+        return data_df
 
-    x = list(column_agg_method_dict.keys()).append(gb_label)
+    x = list(column_agg_method_dict.keys())
+    x = x + [gb_label]
     data_df1 = data_df[x].groupby(gb_label).agg(column_agg_method_dict).reset_index().copy(deep=True)
 
-    # https://stackoverflow.com/questions/27298178/concatenate-strings-from-several-rows-using-pandas-groupby/45925961
-    y = column_join_list
-    data_df2 = data_df[y].groupby(gb_label).apply(','.join).reset_index().copy(deep=True)
+    row_dict = {}
+    gb_val_list = list(data_df[gb_label].unique())
+    for g in gb_val_list:
+        d = data_df[data_df[gb_label] == g]
+        hmdb_ids = unstack_hmdbs(d, 'hmdb_ids')
+        row_dict[g] = str(hmdb_ids)
 
-    data_df = data_df1.join(data_df2, how='left', on=gb_label)
+    data_df2 = pd.DataFrame.from_dict(row_dict, orient='index')
+    data_df2[gb_label] = data_df2.index
+    data_df = data_df1.join(data_df2, on=gb_label, how='left')
+
+    out_columns = [(gb_label, ''), ('has_no_loss', 'count'), ('has_no_loss', 'freq'),
+               ('has_H2O', 'count'), ('has_H2O', 'freq'),
+               ('off_sample', 'count'), ('off_sample', 'freq'),
+               ('off_sample_H2O', 'count'), ('off_sample_H2O', 'freq'),
+
+               ('msm', 'mean'), ('msm', 'std'), ('msm_H2O', 'mean'), ('msm_H2O', 'std'),
+               ('fdr', 'mean'), ('fdr', 'std'), ('fdr_H2O', 'mean'), ('fdr_H2O', 'std'),
+               ('intensity_avg', 'mean'), ('intensity_avg', 'std'),
+               ('intensity_avg_H2O', 'mean'), ('intensity_avg_H2O', 'std'),
+               ('colocalization_H2O', 'mean'), ('colocalization_H2O', 'std'),
+               ('loss_intensity_share_H2O', 'mean'), ('loss_intensity_share_H2O', 'std'),
+               ('FDR10-v4', 'mean'), ('FDR10-v4', 'std'), 0]
+
+    data_df = data_df[out_columns].copy(deep=True)
 
     return data_df
 
@@ -142,8 +166,10 @@ def dataset_parser(data_df, data_sort):
 def pca_from_df(df, title, binary_bool):
     # https://towardsdatascience.com/pca-using-python-scikit-learn-e653f8989e60
     pca = PCA(n_components=2)
-    principalComponents = pca.fit_transform(df)
+    principalComponents = pca.fit_transform(df.astype(float))
     pca_df = pd.DataFrame(data = principalComponents, columns = ['x', 'y'])
+    pca_df = pd.concat([pca_df, df], axis=1)
+    print(pca_df)
     return {'df': pca_df, 'title': title, 'x_label': 'pca_1', 'y_label': 'pca_2',
             'color_type': None}
 
@@ -157,6 +183,7 @@ def umap_from_df(df, title, binary_bool):
 
     embedding = reducer.fit_transform(df)
     umap_df = pd.DataFrame(data=embedding, columns=['x', 'y'])
+    umap_df = pd.concat([umap_df, df], axis=1)
     return {'df': umap_df, 'title': title, 'x_label': 'umap_1', 'y_label': 'umap_2',
             'color_type': None}
 
@@ -164,30 +191,32 @@ def umap_from_df(df, title, binary_bool):
 def km_cluster_after_dim_red(df, n):
     # https://scikit-learn.org/stable/modules/generated/sklearn.cluster.KMeans.html
     if n == 0:
+        df['color'] = 1
         return df
 
-    kmeans = KMeans(n_clusters=n, random_state=0).fit(df['x', 'y'])
+    kmeans = KMeans(n_clusters=n, random_state=0).fit(df[['x', 'y']])
     df['color'] = kmeans.labels_
     return df
 
 
 def scatter_plot(df_dict):
     title = df_dict['title']
-    x = df_dict['df'].x
-    y = df_dict['df'].y
+    x = list(df_dict['df'])[0]
+    y = list(df_dict['df'])[1]
     c = df_dict['df'].color
-    xl = df_dict['x_label']
-    yl = df_dict['y_label']
-    data = df_dict['x', 'y']
+    xl = str(df_dict['x_label'])
+    yl = str(df_dict['y_label'])
+    data = df_dict['df'][['x', 'y']]
 
     if df_dict['color_type'] is None:
         # https://seaborn.pydata.org/examples/hexbin_marginals.html
-        sns.set(style="ticks")
-        plot = sns.jointplot(x=x, y=y, kind="hex", color="#4CB391").set(title=title)
+        sns.set(style="ticks").color_palette("hls")
+        plot = sns.jointplot(x=xl, y=yl, kind="hex", color="#4CB391").set(title=title)
 
     else:
         # https://seaborn.pydata.org/examples/different_scatter_variables.html
-        plot = sns.scatterplot(data=data, x=xl, y=yl, hue_order=c).set(title=title)
+        plot = sns.scatterplot(data=data, x=x, y=y, hue=c, palette="bright",
+                               alpha=0.5, legend='brief').set(title=title, xlabel=xl, ylabel=yl)
 
     return plot
 
@@ -276,14 +305,15 @@ def show_color(df_dict, expt_ids):
         pass
 
     elif df_dict['color_type'] is None:
-        d = df_dict['data']
+        d = df_dict['df']
         d['color'] = 0
-        df_dict['data'] = d
+        df_dict['df'] = d
 
     elif df_dict['color_type'] is 'experimental':
-        d = df_dict['data']
+        d = df_dict['df']
+        print(list(d))
         d['color'] = d.hmdb_ids.apply(lambda x: expt_or_no(x, expt_ids))
-        df_dict['data'] = d
+        df_dict['df'] = d
 
     else:
         print('Color scheme unknown')
@@ -292,13 +322,18 @@ def show_color(df_dict, expt_ids):
     return df_dict
 
 
+def unstack_hmdbs(df, col):
+    expt_ids = []
+    for item in itertools.chain.from_iterable(df[col]):
+        expt_ids.append(item)
+    expt_ids = list(set(expt_ids))
+    return expt_ids
+
+
 def master(data_df, dfs, mord_bool, morg_bool, expt_only,
            dim_red, data_sort, title, n, color, plot_type):
 
-    expt_ids = []
-    for item in itertools.chain.from_iterable(data_df.hmdb_ids):
-        expt_ids.append(item)
-    expt_ids = list(set(expt_ids))
+    expt_ids = unstack_hmdbs(data_df, 'hmdb_ids')
 
     # Parses theoretical databases
     if expt_only is True:
@@ -311,7 +346,6 @@ def master(data_df, dfs, mord_bool, morg_bool, expt_only,
     else:
         # db_dfs = {'data': a, 'ids': b, 'Molecule': c, 'data_type': d}
         db_dfs = db_mm_parser(dfs, mord_bool, morg_bool)
-
 
     # Parses experimental data:
     data_df = dataset_parser(data_df, data_sort)
@@ -328,9 +362,16 @@ def master(data_df, dfs, mord_bool, morg_bool, expt_only,
         df_dict = pca_from_df(db_dfs['data'], title, binary_bool)
     else:
         # Plot unclustered data? To-do
+        x = {'hmdb_ids': list(db_dfs['ids']), 'Molecule': list(db_dfs['Molecule'])}
+        df_dict = {'df': pd.DataFrame.from_dict(x),
+                   'title': title, 'x_label': None, 'y_label': None}
         pass
 
-    df_dict['df'] = km_cluster_after_dim_red(df_dict['df'], n)
+    if data_sort is 'all':
+        df_dict['df'] = km_cluster_after_dim_red(df_dict['df'], n)
+    else:
+        df_dict['df']['color'] = 1
+
     df_dict['color_type'] = color
 
     df_dict = show_color(df_dict, data_df)
