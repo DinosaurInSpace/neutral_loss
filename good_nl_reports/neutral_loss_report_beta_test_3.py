@@ -46,8 +46,8 @@ MAX_FDR = 0.5
 # while they are reprocessing. Progress can be monitored on the METASPACE website.
 
 # I think these two are redundant?
-reprocess = False  # True
-reprocess_not_downloading = False  # True
+reprocess = True  # [True, False]
+reprocess_not_downloading = True  # [True, False]
 
 if reprocess == True:
     sm = SMInstance(host=METASPACE_HOST)
@@ -57,7 +57,7 @@ if reprocess == True:
         updateDataset(id: $id, input: $input, reprocess: true, force: true)
         }"""
         new_params = {
-        "neutralLosses": NEUTRAL_LOSSES, "molDBs": 'core_metabolome_v2'
+        "neutralLosses": NEUTRAL_LOSSES, "molDBs": 'core_metabolome_v3'
         }
         sm._gqclient.query(query, {"id": ds_id, "input": new_params})
 
@@ -162,7 +162,7 @@ def get_ion_images_for_analysis(img_ids, hotspot_percentile=99, max_size=None, m
 def get_single_dataset_images(ds_id, fdr=0.5):
     gql = GraphQLClient(get_config(METASPACE_HOST, email=SM_USER, password=SM_PASS))
     gql.ANNOTATION_FIELDS = ANNOTATION_FIELDS # Override selected fields to include neutral losses, HMDB IDs, etc.
-    anns = gql.getAnnotations({'database': 'core_metabolome_v2', 'fdrLevel': fdr, 'hasNeutralLoss': None},
+    anns = gql.getAnnotations({'database': 'core_metabolome_v3', 'fdrLevel': fdr, 'hasNeutralLoss': None},
                               {'ids': ds_id})
     img_ids = [ann['isotopeImages'][0]['url'][-32:] for ann in anns]
     if img_ids:

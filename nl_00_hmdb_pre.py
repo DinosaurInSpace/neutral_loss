@@ -49,7 +49,10 @@ __status__ = "Development"
 
 
 def load_hmdb_df(hmdb_df_path):
+    # Strips R/S and E/Z stereochemistry since MS can't tell apart downstream.
+
     hmdb_df = pd.read_pickle(hmdb_df_path)
+
     if 'Molecule' in list(hmdb_df):
         pass
     elif 'smiles' in list(hmdb_df):
@@ -59,6 +62,11 @@ def load_hmdb_df(hmdb_df_path):
     else:
         print('Check database format, should contain: "Molecule", "smiles", or "inchi"')
         exit(1)
+
+    hmdb_df['Molecule2'] = hmdb_df['Molecule']
+    hmdb_df['Molecule2'].apply(lambda x: Chem.RemoveStereochemistry(x))
+    hmdb_df['smiles2'] = hmdb_df['Molecule2'].apply(lambda x: Chem.MolToSmiles(x))
+    hmdb_df['Molecule'] = hmdb_df['smiles2'].apply(lambda x: MolFromSmiles(x))
 
     hmdb_df = hmdb_df.rename(columns={'id': 'hmdb_ids'})
     hmdb_df = hmdb_df.dropna(axis=0, how='any')
