@@ -51,43 +51,32 @@ __email__ = "chrisrath@gmail.com"
 __status__ = "Development"
 
 '''
-# to do:
+# to do now:
+1. Plot chemical space pos/neg/both
+2. Run steps 1-2 
+3. Build regression models (3)
+4. Build classifiers (3)
 
-Dataframes:
-Use chem_scatter to plot!
-    Supports df
-    Supports plot
-    Supports labeling some points differently
-    Fast
+Future:
+    Lachlan:   
+        PCA then umap? To drop non-contributing features
+        Build models and identify contributing features.  
 
-Plots:   
-    Chemical space x3 ns
-    Chemical space x3 cross-cats (3)
-    Chemical space obs v all
-    Chemical space obs only
-    Chemical space obs ds
-    Chemical space obs nl
+    Easy:
+        https://seaborn.pydata.org/examples/pair_grid_with_kde.html
+        Drop duplicate datasets
+        Get clusters back from visualization!
+            -https://github.com/mwaskom/seaborn/issues/1207
 
-Lachlan:   
-    PCA then umap? To drop non-contributing features
-    Build models and identify contributing features.  
-
-Easy:
-    https://seaborn.pydata.org/examples/pair_grid_with_kde.html
-    Drop duplicate datasets
-    Prune bad molecules in db (e.g. metals)
-    Get clusters back from visualization!
-        -https://github.com/mwaskom/seaborn/issues/1207
-
-Hard:
-    Chemical space vs chemical space (Mapping mordred onto morgan)
-        Calculate pair-wise matrix each then do what?
-            Network
-            Dendrogram
-    Link mord, morg, mm and show tooltip on all three!
-        https://community.plot.ly/t/is-it-possible-to-link-selections-across-plotly-plots/7120
-        https://github.com/plotly/crosslink-plotly.js/
-        https://plot.ly/python/v3/ipython-notebooks/cufflinks/#chart-types
+    Hard:
+        Chemical space vs chemical space (Mapping mordred onto morgan)
+            Calculate pair-wise matrix each then do what?
+                Network
+                Dendrogram
+        Link mord, morg, mm and show tooltip on all three!
+            https://community.plot.ly/t/is-it-possible-to-link-selections-across-plotly-plots/7120
+            https://github.com/plotly/crosslink-plotly.js/
+            https://plot.ly/python/v3/ipython-notebooks/cufflinks/#chart-types
         
 '''
 # Surpress warnings from umap

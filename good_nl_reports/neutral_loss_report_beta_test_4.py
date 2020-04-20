@@ -27,7 +27,7 @@ METASPACE_HOST = 'https://beta.metaspace2020.eu'
 
 DATASETS_WITH_NL = pd.read_csv(StringIO(
 """ds_id,name,polarity,organism,organism_part,analyzer,ionisation_source,maldi_matrix
-2018-06-08_08h57m39s,06062018_AR_Fluokit_DAN_Neg_p60_s50,negative,Homo sapiens (human),Ovary,Orbitrap,MALDI,15-diaminonaphthalene (DAN)
+2019-12-04_00h41m47s,20191202_jl_lungmap_test_12pass,positive,Homo sapiens (human),Lung,FTICR,MALDI,25-dihydroxybenzoic acid (DHB)
 """))
 DATASETS_WITH_NL['ds_id'] = DATASETS_WITH_NL.ds_id.str.strip()
 
@@ -259,7 +259,7 @@ def get_ds_neutral_loss_stats(ds_id, fdr):
 
 if reprocess_not_downloading != True:
     nl_stats = pd.concat([get_ds_neutral_loss_stats(ds_id, MAX_FDR) for ds_id in DATASETS_WITH_NL.ds_id])
-    nl_stats.to_pickle(f'{BASE_PATH}/2018-06-08_08h57m39s.pickle')
+    nl_stats.to_pickle(f'{BASE_PATH}/2019-12-04_00h41m47s.pickle')
 
 #%%
 #%%

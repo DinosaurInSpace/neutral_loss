@@ -202,7 +202,8 @@ def water_cleanup(x_df):
                        'n_loss_only_H2O', 'n_loss_wparent_H2O',
                        'msm', 'msm_H2O', 'off_sample', 'off_sample_H2O',
                        'intensity_avg', 'intensity_avg_H2O',
-                       'ion', 'ion_H2O', 'ion_formula', 'ion_formula_H2O']
+                       'ion', 'ion_H2O', 'ion_formula', 'ion_formula_H2O',
+                       'group', 'analyzer']
 
     x_df = x_df[desired_columns].copy(deep=True)
 

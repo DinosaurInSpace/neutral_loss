@@ -65,7 +65,7 @@ def column_clean(x_df):
                        'n_loss_wparent_H2O', 'off_sample', 'off_sample_H2O',
                        'ion', 'ion_H2O', 'ion_formula', 'ion_formula_H2O',
                        'intensity_avg', 'intensity_avg_H2O', 'trues', 'falses', 'rando',
-                       'Molecule', 'weight']
+                       'Molecule', 'weight', 'group', 'analyzer']
     x_df = x_df[desired_columns].copy(deep=True)
 
     convert_dict = {'polarity': np.int8, 'adduct': str ,'num_ids': np.uint8,
