@@ -22,3 +22,10 @@
 /retired/
 /good_nl_reports/reports/
 /databases/
+/core_metabolome_v2.txt
+/high_quality.pickle
+/high_quality_cm3.pickle
+/high_quality_cm3_hmdb_01.pickle
+/high_quality_cm3_output_01.pickle
+/high_quality_cm3_output_02.pickle
+/obs_df.pickle
